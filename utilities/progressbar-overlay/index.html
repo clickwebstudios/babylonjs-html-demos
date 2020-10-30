@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>BabylonJS Viewer Progress Bar with Overlay Image</title>
+        <style>
+            babylon {
+                width: 100%;
+                height: 100%;
+            }
+            #viewerProgress {
+              width: 100%;
+              background-color: #ddd;
+            }
+            #viewerProgressBar {
+              width: 1%;
+              height: 30px;
+              color: #FFF;
+              background-color: mediumblue;
+              text-align: left;
+              padding-top: 5px;
+              overflow: hidden;
+              font-size: 110%;
+            }
+            .viewer-wrap {width:80%;height: 60vh;}
+            #viewer-overlay-image { z-index: 900; width: 100%;height: 100%;position: relative;top:0px;background-position: center;background-repeat: no-repeat;background-size: cover;}
+        </style>
+    </head>
+
+    <body style="min-height: 120vh">
+        <h1>BabylonJS Viewer Progress Bar with Overlay Image <small>(example)</small></h1>
+        <div class="viewer-wrap">
+          <div id="viewer-overlay-image"> 
+            <babylon id="babylon-viewer" extends="minimal" model.url="https://playground.babylonjs.com/scenes/ufo.glb" observers.on-scene-init="globalSceneInitCallback" data-model-image="url(fallback-ufo.png)" >
+              <camera>
+                <behaviors>
+                  <auto-rotate type="0"></auto-rotate>
+                </behaviors>
+              </camera>
+            </babylon>
+          </div>
+
+          <div id="viewerProgress">
+            <div id="viewerProgressBar">
+            </div>
+         </div>
+        </div>
+
+
+        <script src="https://cdn.babylonjs.com/viewer/babylon.viewer.js"></script>
+        <script>
+// Progress Bar variables          
+var progressBarPoints = ["1", "45", "80"]; // change as you need
+var progressBarMessage = ["Engine is ready...","Scene is ready...", "Model loaded"]; // Messages for every point
+var progressBarFadeDelay = "1000"; // Delay in ms to hide Progress Bar after completion
+
+// Getting data-model-image to fill #viewer-overlay-image div from <babylon> DOM
+var modelImage = document.querySelector('babylon');
+console.log(modelImage.getAttribute('data-model-image'));
+document.getElementById("viewer-overlay-image").style.backgroundImage=modelImage.getAttribute('data-model-image');
+document.getElementById("babylon-viewer").style.visibility ="hidden"; // hide Viewer till everything will be loaded
+
+            // Promise-based API
+            BabylonViewer.viewerManager.getViewerPromiseById('babylon-viewer').then(function (viewer) {
+                // this will resolve only after the viewer with this specific ID is initialized
+                    console.log('Using promises: ', 'viewer - ' + viewer.getBaseId());
+                    viewerObservables(viewer);
+            });
+
+           function viewerObservables(viewer) {
+                viewer.onEngineInitObservable.add(function (engine) {
+                    console.log(progressBarMessage[0]);
+                    moveProgressBar (progressBarPoints[0], progressBarPoints[1], progressBarMessage[0]);
+                });
+
+                viewer.onSceneInitObservable.add(function (scene) {
+                    console.log(progressBarMessage[1]);
+                    moveProgressBar (progressBarPoints[1], progressBarPoints[2],progressBarMessage[1]);
+                });
+
+                viewer.onModelLoadedObservable.add(function (meshes) {
+                    console.log(progressBarMessage[2]);
+                    moveProgressBar(progressBarPoints[2], 100, progressBarMessage[2]);
+                // Timeout for delay before hiding progress bar
+                    setTimeout(function(){ document.getElementById("viewerProgress").style.display ="none";
+                  document.getElementById("babylon-viewer").style.visibility="visible";}, progressBarFadeDelay);
+           
+                });
+            }
+
+// Function moveProgressBar() for Viewer progress bar displaying
+var i = 0;
+var iniwidth = 1;
+var counter = 99;
+var message =" ";
+
+  var moveProgressBar = function(iniwidth, counter, message) {
+    if (i == 0) {
+      i = 1;
+      var elem = document.getElementById("viewerProgressBar");
+      var width = iniwidth;
+      var id = setInterval(frame, 10);
+    function frame() {
+      if (width >= counter) {
+        clearInterval(id);
+        i = 0;
+      } else {
+        width++;
+        elem.style.width = width + "%";
+        elem.innerHTML =  '<span style="color:white; padding-left:20px">'+width + "%  " +'</span>'+'<span style="color:thistle;float:right;padding-right:20px;"> ' + message +'</span>';
+      }
+    }
+  }
+}
+
+        </script>
+    </body>
+</html>
